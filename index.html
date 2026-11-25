@@ -12,7 +12,7 @@
   html{font-size:min(1vw,1.778vh)}
   html,body{height:100%;overflow:hidden}
   body{font-family:'Gowun Dodum',sans-serif;color:var(--ink);background:var(--bg);font-size:1rem}
-  .wrap{height:100vh;display:grid;grid-template-rows:auto 1fr auto;padding:1.2rem 1.6rem 0}
+  .wrap{height:100vh;height:100dvh;display:grid;grid-template-rows:auto 1fr auto;padding:1.2rem 1.6rem 0}
   /* 머리 */
   header{display:flex;align-items:center;gap:1.6rem;padding-bottom:.9rem;border-bottom:.25rem solid var(--red)}
   .logo{font-family:'Gowun Batang',serif;font-size:2.4rem}
@@ -29,9 +29,9 @@
   .bhead{display:flex;justify-content:space-between;align-items:baseline}
   .bhead h2{font-size:1.6rem}
   .bhead span{font-size:1rem;color:var(--sub)}
-  .pair{display:grid;grid-template-columns:7rem 1fr 2.6rem 1fr;align-items:stretch;gap:.6rem;min-height:0}
+  .pair{display:grid;grid-template-columns:8.6rem 1fr 2.4rem 1fr;align-items:stretch;gap:.6rem;min-height:0}
   .ptitle{display:flex;flex-direction:column;justify-content:center;font-size:1.05rem;color:var(--sub);line-height:1.35}
-  .ptitle b{font-size:1.35rem;color:var(--ink)}
+  .ptitle b{font-size:1.3rem;color:var(--ink);white-space:nowrap}
   .vs{display:flex;align-items:center;justify-content:center;font-family:'Gowun Batang';font-size:1.3rem;color:#c9bfb4}
   .stk{background:var(--card);border:.08rem solid var(--line);border-radius:.8rem;padding:.55rem .9rem;display:grid;grid-template-columns:1fr 9rem;grid-template-rows:auto 1fr;column-gap:.6rem;position:relative;overflow:hidden}
   .stk.win{border-color:var(--red);box-shadow:0 0 0 .12rem var(--red) inset}
@@ -160,16 +160,27 @@ function load() {
     $('app').innerHTML = '<div class="wait">config.js 에 데이터 서버 주소(DATA_URL)를 넣어 주세요.</div>'; return;
   }
   fetch(DATA_URL + (DATA_URL.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now())
-    .then(r => r.json())
-    .then(r => {
+    .then(r => r.text())
+    .then(t => {
+      let r;
+      try { r = JSON.parse(t); }
+      catch (e) {
+        const why = /accounts\.google|ServiceLogin|로그인|Sign in/i.test(t)
+          ? '데이터 서버가 로그인을 요구해요 → 배포 관리에서 액세스 권한을 "모든 사용자"로 바꿔 주세요.'
+          : /<html|<!DOCTYPE/i.test(t)
+          ? '데이터 서버가 숫자 대신 웹페이지를 보내요 → 시트의 Apps Script Code.gs를 1번 데이터 서버 코드로 바꾸고 "새 버전"으로 배포해 주세요.'
+          : '데이터 서버 응답을 읽지 못했어요.';
+        throw new Error(why);
+      }
+      if (r && r.error) throw new Error('데이터 서버 오류: ' + r.error);
       $('err').style.display = 'none';
       const first = !D; D = r;
       if (cur >= 0 && !D.stocks[cur].ready) cur = -1;
-      if (first) show(); else { render(); fitChart(); }
+      if (first) show(); else { render(); fit(); fitChart(); }
     })
     .catch(e => {
       console.log(e);
-      const el = $('err'); el.textContent = '⚠️ 데이터를 불러오지 못했어요. 잠시 후 다시 시도해요.'; el.style.display = 'block';
+      const el = $('err'); el.textContent = '⚠️ ' + (e && e.message && e.message.indexOf('→') > 0 ? e.message : '데이터 서버에 연결하지 못했어요. config.js 주소(…/exec)와 배포 액세스 권한(모든 사용자)을 확인해 주세요.'); el.style.display = 'block';
       if (!D) setTimeout(load, 30 * 1000);
     });
 }
@@ -208,7 +219,7 @@ function render() {
   for (let i = 0; i < stocks.length; i += 2) {
     const a = stocks[i], b = stocks[i + 1];
     if (!b) break;
-    const m = (a.intro.match(/\[(.+?)\]/) || [, ''])[1];
+    const m = ((a.intro.match(/\[(.+?)\]/) || [, ''])[1]).replace(/대결\s*/, '');
     const [no, ...rest] = m.split(' ');
     const aw = ready && a.ready && b.ready && a.chg > b.chg, bw = ready && a.ready && b.ready && b.chg > a.chg;
     pairs += `<div class="pair"><div class="ptitle">${esc(no)}<b>${esc(rest.join(' '))}</b></div>
@@ -232,7 +243,7 @@ function render() {
   </header>
   ${cur < 0 ? `<main class="fade">
     <section class="board">
-      <div class="bhead"><h2>📊 명지증권 한·미 대결</h2>
+      <div class="bhead"><h2>📊 명지증권 한국 vs 미국</h2>
         <span>${md(D.baseDay)} ${won(D.base)}원 출발 · 실제 주가 등락의 2배 · % 는 출발 대비</span></div>
       ${pairs}
     </section>
@@ -286,6 +297,7 @@ function nextSlide() {
 function show() {
   if (!D) return;
   render();
+  fit();
   fitChart();
   const ms = cur < 0 ? MAIN_MS : STOCK_MS;
   startProg(ms);
@@ -298,6 +310,22 @@ function fitChart() {
   const el = document.querySelector('.sl-chart'), st = D.stocks[cur];
   if (el && st) el.innerHTML = chartSVG(st.series, st.chg >= 0, el.clientWidth, el.clientHeight);
 }
+
+/* ---------- 어떤 화면(TV·태블릿·PC)에서도 한 화면에 다 들어가게 ---------- */
+function overflowing() {
+  const els = document.querySelectorAll('.wrap, main, .board, .side, .slide, .sl-left, .pair, .stk, .card, footer, header');
+  for (const el of els) if (el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2) return true;
+  return false;
+}
+function fit() {
+  const W = window.innerWidth, H = window.innerHeight, root = document.documentElement;
+  const wrap = document.querySelector('.wrap');
+  if (wrap) wrap.style.height = H + 'px';
+  let fs = Math.min(W / 100, H / 56.25);
+  root.style.fontSize = fs + 'px';
+  for (let i = 0; i < 30 && overflowing(); i++) { fs *= 0.95; root.style.fontSize = fs + 'px'; }
+}
+
 function fmtReal(v, cur) { return cur === '달러' ? '$' + v.toFixed(2) : Math.round(v).toLocaleString('ko-KR') + '원'; }
 
 function chartSVG(series, up, W0, H0) {
@@ -338,7 +366,7 @@ function chartSVG(series, up, W0, H0) {
 function stockSlide(i) {
   const s = D.stocks[i];
   const mate = D.stocks[i % 2 === 0 ? i + 1 : i - 1];
-  const m = (s.intro.match(/\[(.+?)\]/) || [, ''])[1];
+  const m = ((s.intro.match(/\[(.+?)\]/) || [, ''])[1]).replace(/대결\s*/, '');
   const intro = s.intro.replace(/\[.+?\]\s*/, '').replace(/\s*↔.*$/, '');
   const prices = s.series.map(x => x.price);
   const hi = Math.max(...prices), lo = Math.min(...prices);
@@ -368,7 +396,7 @@ function stockSlide(i) {
         <div class="real">${md(D.baseDay)} <b>${fmtReal(s.realBase, s.currency)}</b> → 지금 <b>${fmtReal(s.realNow, s.currency)}</b>
           <span class="${cls(s.realChg)}">${pctS(s.realChg)}</span><br>
           <span style="color:var(--sub);font-size:1rem">명지가는 실제 등락의 2배로 움직여요 · ${s.holders}명이 ${s.shares}주 보유 중</span></div></div>
-      ${mate ? `<div class="card"><h3>⚔️ 대결 상대</h3>
+      ${mate ? `<div class="card"><h3>⚔️ 맞수 종목</h3>
         <div class="rival"><span><em class="mk ${mate.market === '미국' ? 'us' : 'kr'}">${mate.market === '미국' ? '미국' : '국내'}</em> ${esc(mate.name)}</span>
           <span class="rp ${cls(mate.chg)}">${mate.ready ? mate.price.toLocaleString() + '원 ' + pctS(mate.chg) : '대기'}</span></div>
         ${verdict ? `<div class="verdict">${verdict}</div>` : ''}</div>` : ''}
@@ -383,7 +411,9 @@ function rotateTip() {
   setTimeout(() => { el.textContent = TIPS[tipIdx]; el.style.opacity = 1; }, 600);
 }
 
-window.addEventListener('resize', () => { if (D) { render(); fitChart(); } });
+window.addEventListener('resize', () => { fit(); if (D) { render(); fit(); fitChart(); } });
+window.addEventListener('orientationchange', () => setTimeout(() => { fit(); if (D) { render(); fit(); fitChart(); } }, 300));
+fit();
 load();
 setInterval(load, 5 * 60 * 1000);      // 5분마다 새 숫자
 setInterval(rotateTip, 12 * 1000);     // 12초마다 경제 한 줄
