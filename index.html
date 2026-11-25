@@ -156,6 +156,26 @@ const TIPS = [
 let tipIdx = 0, D = null, cur = -1, slideTimer = null;
 const MAIN_MS = 60 * 1000, STOCK_MS = 8 * 1000;   // 메인 60초, 종목별 8초
 
+
+/* ---------- 새 숫자를 받아 오는 주기 ----------
+   창구 시간(설정 탭 B28~B29, 앞 5분·뒤 10분 여유): 15초마다
+   아침 6시~9시(밤사이 주가 반영): 5분마다
+   그 밖의 시간: 10분마다 */
+let loadTimer = null;
+function minutesOf(t) { const p = String(t || '').split(':').map(Number); return p[0] * 60 + (p[1] || 0); }
+function windowState() {
+  const w = (D && D.window) || { open: '13:00', close: '13:15' };
+  const d = new Date(), n = d.getHours() * 60 + d.getMinutes();
+  const o = minutesOf(w.open), c = minutesOf(w.close);
+  return { open: w.open, close: w.close, openNow: n >= o && n < c, busy: n >= o - 5 && n < c + 10, morning: n >= 360 && n < 540 };
+}
+function scheduleLoad() {
+  clearTimeout(loadTimer);
+  const st = windowState();
+  const ms = st.busy ? 15 * 1000 : st.morning ? 5 * 60 * 1000 : 10 * 60 * 1000;
+  loadTimer = setTimeout(load, ms);
+}
+
 function load() {
   if (!window.DATA_URL || DATA_URL.indexOf('script.google.com') < 0) {
     $('app').innerHTML = '<div class="wait">config.js 에 데이터 서버 주소(DATA_URL)를 넣어 주세요.</div>'; return;
@@ -178,11 +198,12 @@ function load() {
       const first = !D; D = r;
       if (cur >= 0 && !D.stocks[cur].ready) cur = -1;
       if (first) show(); else { render(); fit(); fitChart(); }
+      scheduleLoad();
     })
     .catch(e => {
       console.log(e);
       const el = $('err'); el.textContent = '⚠️ ' + (e && e.message && e.message.indexOf('→') > 0 ? e.message : '데이터 서버에 연결하지 못했어요. config.js 주소(…/exec)와 배포 액세스 권한(모든 사용자)을 확인해 주세요.'); el.style.display = 'block';
-      if (!D) setTimeout(load, 30 * 1000);
+      if (!D) { clearTimeout(loadTimer); loadTimer = setTimeout(load, 30 * 1000); } else scheduleLoad();
     });
 }
 
@@ -239,10 +260,11 @@ function render() {
     <div class="logo">🌹 명지 <b>경제 뉴스</b><small>명지은행 · 명지증권</small></div>
     <span class="chip">${md(t)}</span>
     <span class="grow"></span>
+    ${windowState().openNow ? `<span class="chip hot">🔴 <b>지금 창구 운영 중</b> · ${windowState().close}까지 실시간</span>` : ''}
     ${nx ? `<span class="chip ${toN === 0 ? 'hot' : ''}">${toN === 0 ? '<b>오늘 점심 거래일!</b>' : `다음 거래일 <b>${md(nx.date)}</b> · D-${toN}`}</span>` : '<span class="chip">거래 기간 종료</span>'}
     <span class="chip hot">피어날 명지花 축제 <b>${toF > 0 ? 'D-' + toF : toF === 0 ? 'D-DAY' : '🌹'}</b></span>
   </header>
-  ${cur < 0 ? `<main class="fade">
+  ${cur < 0 ? `<main class="${ANIM ? 'fade' : ''}">
     <section class="board">
       <div class="bhead">
         <span>${md(D.baseDay)} ${won(D.base)}원 출발 · 실제 주가 등락의 2배 · % 는 출발 대비</span></div>
@@ -295,9 +317,10 @@ function nextSlide() {
   else { const k = ids.indexOf(cur); cur = (k >= 0 && k < ids.length - 1) ? ids[k + 1] : -1; }
   show();
 }
+let ANIM = false;
 function show() {
   if (!D) return;
-  render();
+  ANIM = true; render(); ANIM = false;
   fit();
   fitChart();
   const ms = cur < 0 ? MAIN_MS : STOCK_MS;
@@ -376,7 +399,7 @@ function stockSlide(i) {
     verdict = s.chg > mate.chg ? `🏆 지금은 <b>${esc(s.name)}</b>이(가) 앞서는 중`
             : s.chg < mate.chg ? `지금은 <b>${esc(mate.name)}</b>이(가) 앞서는 중` : '지금은 무승부';
   }
-  return `<main class="slide fade">
+  return `<main class="slide ${ANIM ? 'fade' : ''}">
     <section class="card sl-left">
       <div class="sl-head">
         <div><div class="sl-tag">${esc(m)} · ${s.market === '미국' ? '미국' : '국내'} · ${esc(s.code)}</div>
@@ -416,7 +439,7 @@ window.addEventListener('resize', () => { fit(); if (D) { render(); fit(); fitCh
 window.addEventListener('orientationchange', () => setTimeout(() => { fit(); if (D) { render(); fit(); fitChart(); } }, 300));
 fit();
 load();
-setInterval(load, 5 * 60 * 1000);      // 5분마다 새 숫자
+// 새 숫자 받아 오기는 scheduleLoad()가 시간대에 맞춰 예약해요
 setInterval(rotateTip, 12 * 1000);     // 12초마다 경제 한 줄
 </script>
 </body>
