@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>명지 경제 뉴스 · 피어날 명지花</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌹</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--red:#c8102e;--blue:#1d5fbf;--ink:#1d1d1f;--sub:#7a746e;--line:#e8e2da;--bg:#fbf8f4;--card:#fff;--gold:#b8860b}
+  *{box-sizing:border-box;margin:0}
+  html{font-size:min(1vw,1.778vh)}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:'Gowun Dodum',sans-serif;color:var(--ink);background:var(--bg);font-size:1rem}
+  .wrap{height:100vh;display:grid;grid-template-rows:auto 1fr auto;padding:1.2rem 1.6rem 0}
+  /* 머리 */
+  header{display:flex;align-items:center;gap:1.6rem;padding-bottom:.9rem;border-bottom:.25rem solid var(--red)}
+  .logo{font-family:'Gowun Batang',serif;font-size:2.4rem}
+  .logo b{color:var(--red)}
+  .logo small{font-family:'Gowun Dodum';font-size:1.1rem;color:var(--sub);margin-left:.6rem}
+  .chip{background:#fff;border:.08rem solid var(--line);border-radius:99rem;padding:.45rem 1.1rem;font-size:1.25rem}
+  .chip b{color:var(--red)}
+  .chip.hot{background:var(--red);color:#fff;border-color:var(--red)}
+  .chip.hot b{color:#fff}
+  .grow{flex:1}
+  /* 본문 */
+  main{display:grid;grid-template-columns:63fr 37fr;gap:1.4rem;padding:1.1rem 0;min-height:0}
+  .board{display:grid;grid-template-rows:auto repeat(5,1fr);gap:.7rem;min-height:0}
+  .bhead{display:flex;justify-content:space-between;align-items:baseline}
+  .bhead h2{font-size:1.6rem}
+  .bhead span{font-size:1rem;color:var(--sub)}
+  .pair{display:grid;grid-template-columns:7rem 1fr 2.6rem 1fr;align-items:stretch;gap:.6rem;min-height:0}
+  .ptitle{display:flex;flex-direction:column;justify-content:center;font-size:1.05rem;color:var(--sub);line-height:1.35}
+  .ptitle b{font-size:1.35rem;color:var(--ink)}
+  .vs{display:flex;align-items:center;justify-content:center;font-family:'Gowun Batang';font-size:1.3rem;color:#c9bfb4}
+  .stk{background:var(--card);border:.08rem solid var(--line);border-radius:.8rem;padding:.55rem .9rem;display:grid;grid-template-columns:1fr 9rem;grid-template-rows:auto 1fr;column-gap:.6rem;position:relative;overflow:hidden}
+  .stk.win{border-color:var(--red);box-shadow:0 0 0 .12rem var(--red) inset}
+  .stk.win.dnw{border-color:var(--blue);box-shadow:0 0 0 .12rem var(--blue) inset}
+  .stk .nm{font-size:1.35rem;white-space:nowrap}
+  .stk .nm small{font-size:.85rem;color:var(--sub);margin-left:.3rem}
+  .stk .px{font-size:2.5rem;line-height:1.05;align-self:end}
+  .stk .px small{font-size:1rem;margin-left:.2rem}
+  .stk .ch{grid-row:1 / span 2;grid-column:2;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:.2rem}
+  .stk .tot{font-size:1.4rem}
+  .stk .day{font-size:.95rem;color:var(--sub)}
+  .stk svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:45%;opacity:.16;pointer-events:none}
+  .up{color:var(--red)}.dn{color:var(--blue)}.eq{color:var(--sub)}
+  .crown{position:absolute;top:.35rem;right:.6rem;font-size:.85rem;background:var(--red);color:#fff;border-radius:99rem;padding:.05rem .55rem}
+  .crown.dnc{background:var(--blue)}
+  /* 오른쪽 */
+  .side{display:grid;grid-template-rows:auto auto 1fr auto;gap:.8rem;min-height:0}
+  .side .card{padding:.8rem 1.1rem}
+  .card{background:var(--card);border:.08rem solid var(--line);border-radius:.9rem;padding:1rem 1.2rem}
+  .card h3{font-size:1.2rem;color:var(--sub);font-weight:normal;margin-bottom:.4rem}
+  .rate{display:flex;align-items:center;gap:1.2rem}
+  .rate .big{font-family:'Gowun Batang';font-size:4.2rem;color:var(--red);line-height:1}
+  .rate .big small{font-size:1.6rem}
+  .rate p{font-size:1.15rem;line-height:1.5}
+  .rate .ex{color:var(--sub);font-size:1rem}
+  .flow .tot{font-size:2.4rem}
+  .flow .tot small{font-size:1.1rem;color:var(--sub)}
+  .bar{display:flex;height:2.1rem;border-radius:.5rem;overflow:hidden;margin:.6rem 0 .5rem;background:#f0ebe4}
+  .bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:.95rem;white-space:nowrap;overflow:hidden;transition:flex .8s}
+  .b1{background:var(--red)}.b2{background:#e07a5f}.b3{background:#d8cfc4;color:#555!important}
+  .legend{display:flex;gap:1.2rem;font-size:1rem;color:var(--sub);flex-wrap:wrap}
+  .legend i{display:inline-block;width:.8rem;height:.8rem;border-radius:.2rem;margin-right:.3rem;vertical-align:-.05rem}
+  .flow .note{font-size:.95rem;color:var(--sub);margin-top:.5rem;line-height:1.5}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+  .stat{background:var(--bg);border-radius:.6rem;padding:.7rem .9rem}
+  .stat .k{font-size:1rem;color:var(--sub)}
+  .stat .v{font-size:2rem}
+  .stat .v small{font-size:1rem;color:var(--sub)}
+  .meter{height:.5rem;background:#ece6de;border-radius:99rem;margin-top:.35rem;overflow:hidden}
+  .meter div{height:100%;background:var(--red);border-radius:99rem;transition:width .8s}
+  .pop{font-size:1.05rem;line-height:1.6;margin-top:.5rem}
+  .pop b{color:var(--red)}
+  .fest{background:linear-gradient(135deg,#fff5f6,#fff);border-color:#f3c6cc}
+  .fest .row{display:flex;justify-content:space-between;align-items:baseline}
+  .fest .d{font-family:'Gowun Batang';font-size:1.9rem;color:var(--red)}
+  .fest p{font-size:.95rem;color:var(--sub);line-height:1.4;margin-top:.2rem}
+  /* 아래 띠 */
+  footer{display:flex;align-items:center;gap:1rem;height:3.6rem;border-top:.08rem solid var(--line);font-size:1.3rem;overflow:hidden}
+  footer .tag{background:var(--ink);color:#fff;border-radius:.4rem;padding:.3rem .8rem;font-size:1.05rem;white-space:nowrap}
+  #tip{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .6s}
+  footer .upd{font-size:.9rem;color:var(--sub);white-space:nowrap}
+  .wait{display:flex;align-items:center;justify-content:center;height:100%;font-size:2rem;color:var(--sub)}
+
+  /* 종목 상세 슬라이드 */
+  .fade{animation:fade .7s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(.6rem)}to{opacity:1;transform:none}}
+  .slide{display:grid;grid-template-columns:66fr 34fr;gap:1.4rem;padding:1.1rem 0;min-height:0}
+  .sl-left{display:grid;grid-template-rows:auto 1fr;min-height:0;padding:1.2rem 1.5rem}
+  .sl-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:.08rem solid var(--line);padding-bottom:.8rem}
+  .sl-tag{font-size:1.15rem;color:var(--sub)}
+  .sl-name{font-family:'Gowun Batang',serif;font-size:3.6rem;line-height:1.15}
+  .sl-price{text-align:right;font-size:5rem;line-height:1}
+  .sl-price small{font-size:1.6rem;margin-left:.3rem}
+  .sl-chg{font-size:1.5rem;margin-top:.4rem}
+  .sl-chart{min-height:0;padding-top:.8rem}
+  .sl-chart svg{width:100%;height:100%}
+  .sl-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:1.6rem;color:var(--sub)}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .kv div{background:var(--bg);border-radius:.6rem;padding:.55rem .8rem}
+  .kv span{display:block;font-size:.95rem;color:var(--sub)}
+  .kv b{font-size:1.7rem;font-weight:normal}
+  .intro{font-size:1.3rem;line-height:1.55}
+  .real{font-size:1.2rem;line-height:1.7}
+  .real b{font-size:1.6rem;font-weight:normal}
+  .rival{display:flex;justify-content:space-between;align-items:center;font-size:1.25rem}
+  .rival .rp{font-size:2rem}
+  .verdict{margin-top:.4rem;font-size:1.15rem;background:var(--bg);border-radius:.5rem;padding:.4rem .7rem}
+  #prog{position:fixed;left:0;bottom:0;height:.35rem;background:var(--red);width:0;z-index:5}
+  .dots{display:flex;gap:.35rem;align-items:center}
+  .dots i{width:.55rem;height:.55rem;border-radius:50%;background:#d9d1c7;display:block}
+  .dots i.on{background:var(--red);width:1.4rem;border-radius:99rem}
+  .mk{font-style:normal;font-size:.8rem;border-radius:.3rem;padding:.05rem .35rem;margin-left:.4rem;vertical-align:.2rem;border:.08rem solid}
+  .mk.kr{color:#c8102e;border-color:#f0b7bf}.mk.us{color:#1d5fbf;border-color:#b9cdee}
+  .rival .mk{margin:0 .3rem 0 0}
+  .err{position:fixed;left:1rem;bottom:4.5rem;background:#333;color:#fff;font-size:1rem;padding:.4rem .8rem;border-radius:.4rem;display:none}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div class="err" id="err"></div>
+<div class="wrap" id="app"><div class="wait">🌹 명지 경제 뉴스를 불러오는 중…</div></div>
+
+<script src="config.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const won = n => Math.round(n || 0).toLocaleString('ko-KR');
+const pctS = r => (r > 0 ? '▲' : r < 0 ? '▼' : '') + Math.abs(r * 100).toFixed(1) + '%';
+const cls = r => r > 0 ? 'up' : r < 0 ? 'dn' : 'eq';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WD = ['일','월','화','수','목','금','토'];
+const md = s => { const d = new Date(s + 'T00:00:00'); return `${d.getMonth()+1}.${d.getDate()}(${WD[d.getDay()]})`; };
+const dday = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
+
+const TIPS = [
+  '📈 주식 가격은 "앞으로 그 회사가 돈을 잘 벌 것 같다"는 사람들의 기대에 따라 움직여요.',
+  '🧺 달걀을 한 바구니에 담지 마라! 서로 다르게 움직이는 종목에 나눠 담는 것이 분산 투자예요.',
+  '💱 달러가 비싸지면(원화 약세) 수출 기업은 웃고, 수입하는 기업은 부담이 커져요.',
+  '🏦 예금은 원금이 안전한 대신 이자가 정해져 있고, 주식은 더 벌 수도 잃을 수도 있어요.',
+  '🌙 미국 주식은 우리가 잠든 밤에 거래돼요. 아침 뉴스로 밤사이 소식을 확인해 보세요.',
+  '🔥 삼양식품 불닭처럼 해외에서 인기가 높아지면 수출 기업의 주가가 오르기도 해요.',
+  '🤖 SK하이닉스는 엔비디아에 AI 메모리를 팔아요. 함께 움직이는 짝은 분산 효과가 작아요.',
+  '🎮 게임 회사는 신작이 흥행하느냐에 따라 주가가 크게 출렁여요.',
+  '🥤 코카콜라처럼 불황에도 잘 팔리는 회사의 주식을 "방어주"라고 불러요.',
+  '📰 투자 이유를 적는 습관! "왜 샀는지" 기록하면 다음 판단이 더 똑똑해져요.',
+  '⚖️ 지난주 은행에 돈이 많이 들어오면 이번 주 금리가 내려가고, 적게 들어오면 올라가요.',
+  '📅 이자는 맡긴 날수만큼! 월요일에 맡겨야 일주일치 이자를 다 받아요.',
+  '🌹 모든 돈은 12월 30~31일 피어날 명지花 축제에서 쓸 수 있어요. 끝까지 지켜보세요!',
+  '🧮 이자는 원금 × 금리! 1만 원을 5%로 1주 맡기면 10,500원이 돼요.',
+  '🚗 미국 관세 뉴스는 수출이 많은 현대차 주가에 영향을 줘요.'
+];
+let tipIdx = 0, D = null, cur = -1, slideTimer = null;
+const MAIN_MS = 60 * 1000, STOCK_MS = 8 * 1000;   // 메인 60초, 종목별 8초
+
+function load() {
+  if (!window.DATA_URL || DATA_URL.indexOf('script.google.com') < 0) {
+    $('app').innerHTML = '<div class="wait">config.js 에 데이터 서버 주소(DATA_URL)를 넣어 주세요.</div>'; return;
+  }
+  fetch(DATA_URL + (DATA_URL.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now())
+    .then(r => r.json())
+    .then(r => {
+      $('err').style.display = 'none';
+      const first = !D; D = r;
+      if (cur >= 0 && !D.stocks[cur].ready) cur = -1;
+      if (first) show(); else { render(); fitChart(); }
+    })
+    .catch(e => {
+      console.log(e);
+      const el = $('err'); el.textContent = '⚠️ 데이터를 불러오지 못했어요. 잠시 후 다시 시도해요.'; el.style.display = 'block';
+      if (!D) setTimeout(load, 30 * 1000);
+    });
+}
+
+function spark(arr, up) {
+  if (!arr || arr.length < 2) return '';
+  const mn = Math.min(...arr), mx = Math.max(...arr), rg = (mx - mn) || 1;
+  const pts = arr.map((v, i) => `${(i / (arr.length - 1) * 100).toFixed(1)},${(38 - (v - mn) / rg * 34).toFixed(1)}`).join(' ');
+  const c = up ? '#c8102e' : '#1d5fbf';
+  return `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polygon points="0,40 ${pts} 100,40" fill="${c}"/></svg>`;
+}
+
+function stkCard(s, win) {
+  const r = s.ready;
+  const winTag = win ? `<span class="crown ${s.chg < 0 ? 'dnc' : ''}">${s.chg < 0 ? '덜 떨어짐' : '앞서는 중'}</span>` : '';
+  return `<div class="stk ${win ? 'win' + (s.chg < 0 ? ' dnw' : '') : ''}">
+    ${spark(s.spark, s.chg >= 0)}
+    ${winTag}
+    <div class="nm">${esc(s.name.replace(/\s*\(.*\)/, ''))}<em class="mk ${s.market === '미국' ? 'us' : 'kr'}">${s.market === '미국' ? '미국' : '국내'}</em></div>
+    <div class="px ${cls(s.chg)}">${won(r ? s.price : D.base)}<small>원</small></div>
+    <div class="ch">
+      <div class="tot ${cls(s.chg)}">${r ? pctS(s.chg) : '출발 대기'}</div>
+      <div class="day">${r ? `어제보다 <span class="${cls(s.dayChg)}">${s.dayChg > 0 ? '+' : ''}${won(s.dayChg)}</span>` : md(D.baseDay) + ' 종가로 시작'}</div>
+    </div>
+  </div>`;
+}
+
+function render() {
+  const t = D.today, toF = dday(t, D.festival);
+  const nx = D.next, toN = nx ? dday(t, nx.date) : null;
+  const stocks = D.stocks;
+  const ready = stocks.some(s => s.ready);
+
+  // 대결 짝 (국내·미국 순서로 2개씩)
+  let pairs = '';
+  for (let i = 0; i < stocks.length; i += 2) {
+    const a = stocks[i], b = stocks[i + 1];
+    if (!b) break;
+    const m = (a.intro.match(/\[(.+?)\]/) || [, ''])[1];
+    const [no, ...rest] = m.split(' ');
+    const aw = ready && a.ready && b.ready && a.chg > b.chg, bw = ready && a.ready && b.ready && b.chg > a.chg;
+    pairs += `<div class="pair"><div class="ptitle">${esc(no)}<b>${esc(rest.join(' '))}</b></div>
+      ${stkCard(a, aw)}<div class="vs">VS</div>${stkCard(b, bw)}</div>`;
+  }
+
+  const sorted = stocks.filter(s => s.ready).slice().sort((x, y) => y.chg - x.chg);
+  const best = sorted[0], worst = sorted[sorted.length - 1];
+  const popular = stocks.slice().sort((x, y) => y.holders - x.holders).filter(s => s.holders > 0).slice(0, 3);
+  const m = D.money, tot = m.total || 0;
+  const seg = (v, c, label) => tot > 0 && v > 0 ? `<div class="${c}" style="flex:${v}">${v / tot >= .12 ? label + ' ' + Math.round(v / tot * 100) + '%' : ''}</div>` : '';
+  const N = D.students || 39;
+
+  $('app').innerHTML = `
+  <header>
+    <div class="logo">🌹 명지 <b>경제 뉴스</b><small>명지은행 · 명지증권</small></div>
+    <span class="chip">${md(t)}</span>
+    <span class="grow"></span>
+    ${nx ? `<span class="chip ${toN === 0 ? 'hot' : ''}">${toN === 0 ? '<b>오늘 점심 거래일!</b>' : `다음 거래일 <b>${md(nx.date)}</b> · D-${toN}`}</span>` : '<span class="chip">거래 기간 종료</span>'}
+    <span class="chip hot">피어날 명지花 축제 <b>${toF > 0 ? 'D-' + toF : toF === 0 ? 'D-DAY' : '🌹'}</b></span>
+  </header>
+  ${cur < 0 ? `<main class="fade">
+    <section class="board">
+      <div class="bhead"><h2>📊 명지증권 한·미 대결</h2>
+        <span>${md(D.baseDay)} ${won(D.base)}원 출발 · 실제 주가 등락의 2배 · % 는 출발 대비</span></div>
+      ${pairs}
+    </section>
+    <aside class="side">
+      <div class="card"><h3>🏦 명지은행 이번 주 금리 (월요일 → 다음 월요일)</h3>
+        <div class="rate"><div class="big">${(D.rate * 100).toFixed(0)}<small>%</small></div>
+          <div><p>${esc(D.rateReason)}</p><p class="ex">월요일에 1만 원 → 다음 월요일 <b class="up">${won(10000 + Math.floor(10000 * D.rate / 100 + 1e-9) * 100)}원</b><br>다른 요일은 맡긴 날수만큼만 (목요일이면 4일치)${D.inflow !== null ? ` · 지난주 은행 유입 ${Math.round(D.inflow * 100)}%` : ''}</p></div></div>
+      </div>
+      <div class="card flow"><h3>💰 명지 시장의 돈</h3>
+        <div class="tot">${won(tot)}<small> 원 (처음 발행 ${won(m.issued)}원${m.extra ? ` · 창구에서 <span class="${cls(m.extra)}">${m.extra > 0 ? '+' : ''}${won(m.extra)}</span>` : ''})</small></div>
+        <div class="bar">${seg(m.bank, 'b1', '은행')}${seg(m.stock, 'b2', '주식')}${seg(Math.max(0, m.cash), 'b3', '지갑')}</div>
+        <div class="legend"><span><i class="b1"></i>은행 ${won(m.bank)}</span><span><i class="b2"></i>주식 ${won(m.stock)}</span><span><i class="b3"></i>지갑 ${won(Math.max(0, m.cash))}</span></div>
+      </div>
+      <div class="card"><h3>🙋 우리 학교 참여</h3>
+        <div class="stats">
+          <div class="stat"><div class="k">예금한 학생</div><div class="v">${D.savers}<small> / ${N}명</small></div><div class="meter"><div style="width:${D.savers / N * 100}%"></div></div></div>
+          <div class="stat"><div class="k">주식 가진 학생</div><div class="v">${D.investors}<small> / ${N}명</small></div><div class="meter"><div style="width:${D.investors / N * 100}%"></div></div></div>
+        </div>
+        <div class="pop">
+          ${best ? `🏆 지금 1등 종목 <b>${esc(best.name)}</b> <span class="${cls(best.chg)}">${pctS(best.chg)}</span>` : '🏆 1등 종목은 첫 거래일부터 공개돼요'}<br>
+          ${worst && worst !== best ? `🧊 가장 힘든 종목 ${esc(worst.name)} <span class="${cls(worst.chg)}">${pctS(worst.chg)}</span><br>` : ''}
+          ${popular.length ? `❤️ 인기 종목 ${popular.map(s => `${esc(s.name)} ${s.holders}명`).join(' · ')}` : '❤️ 인기 종목은 첫 거래 뒤에 보여요'}
+        </div>
+      </div>
+      <div class="card fest">
+        <div class="row"><h3>🌹 축제에서 쓰는 날</h3><div class="d">12.30~31</div></div>
+        <p>12.29(화) 마지막 정산 때 은행·주식의 돈을 모두 지폐로 찾아 축제 부스에서 써요.</p>
+      </div>
+    </aside>
+  </main>` : stockSlide(cur)}
+  <footer><span class="tag">경제 한 줄</span><span id="tip">${TIPS[tipIdx]}</span><span class="dots">${dotsHTML()}</span><span class="upd">${D.updated} 갱신</span></footer>`;
+}
+
+
+/* ---------- 슬라이드 순서: 메인 → 종목 10개 → 메인 ---------- */
+function readyIdx() { return D ? D.stocks.map((s, i) => s.ready ? i : -1).filter(i => i >= 0) : []; }
+function dotsHTML() {
+  const ids = readyIdx();
+  return `<i class="${cur < 0 ? 'on' : ''}"></i>` + ids.map(i => `<i class="${cur === i ? 'on' : ''}"></i>`).join('');
+}
+function startProg(ms) {
+  const p = $('prog'); p.style.transition = 'none'; p.style.width = '0';
+  void p.offsetWidth; p.style.transition = `width ${ms}ms linear`; p.style.width = '100%';
+}
+function nextSlide() {
+  const ids = readyIdx();
+  if (cur < 0) cur = ids.length ? ids[0] : -1;
+  else { const k = ids.indexOf(cur); cur = (k >= 0 && k < ids.length - 1) ? ids[k + 1] : -1; }
+  show();
+}
+function show() {
+  if (!D) return;
+  render();
+  fitChart();
+  const ms = cur < 0 ? MAIN_MS : STOCK_MS;
+  startProg(ms);
+  clearTimeout(slideTimer);
+  slideTimer = setTimeout(nextSlide, ms);
+}
+
+function fitChart() {
+  if (cur < 0) return;
+  const el = document.querySelector('.sl-chart'), st = D.stocks[cur];
+  if (el && st) el.innerHTML = chartSVG(st.series, st.chg >= 0, el.clientWidth, el.clientHeight);
+}
+function fmtReal(v, cur) { return cur === '달러' ? '$' + v.toFixed(2) : Math.round(v).toLocaleString('ko-KR') + '원'; }
+
+function chartSVG(series, up, W0, H0) {
+  if (!series || series.length < 2) return `<div class="sl-empty">${md(D.baseDay)} 종가가 나오면 그래프가 그려져요</div>`;
+  const W = Math.round(W0 || 1000), H = Math.round(H0 || 430), f = Math.max(12, W / 70), L = f * 4.8, R = f * 1.5, T = f * 2.2, B = f * 3;
+  const vals = series.map(x => x.price).concat([D.base]);
+  let mn = Math.min(...vals), mx = Math.max(...vals);
+  const pad = Math.max(200, (mx - mn) * 0.15); mn = Math.max(0, mn - pad); mx = mx + pad;
+  const x = i => L + (W - L - R) * (series.length === 1 ? 0 : i / (series.length - 1));
+  const y = v => T + (H - T - B) * (1 - (v - mn) / (mx - mn));
+  const c = up ? '#c8102e' : '#1d5fbf';
+  let g = '';
+  for (let k = 0; k <= 4; k++) {
+    const v = mn + (mx - mn) * k / 4, yy = y(v);
+    g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="#ece6de" stroke-width="1"/>
+          <text x="${L - f * .6}" y="${yy + f * .35}" text-anchor="end" font-size="${f}" fill="#9a928a">${(Math.round(v / 100) * 100).toLocaleString()}</text>`;
+  }
+  const step = Math.max(1, Math.ceil(series.length / 8));
+  series.forEach((p, i) => {
+    if (i % step === 0 || i === series.length - 1)
+      g += `<text x="${x(i)}" y="${H - f * .8}" text-anchor="middle" font-size="${f}" fill="#9a928a">${md(p.date).replace(/\(.\)/, '')}</text>`;
+  });
+  const by = y(D.base);
+  g += `<line x1="${L}" x2="${W - R}" y1="${by}" y2="${by}" stroke="#b9afa4" stroke-dasharray="6 6"/>
+        <text x="${W - R}" y="${by - f * .5}" text-anchor="end" font-size="${f}" fill="#9a928a">출발 ${D.base.toLocaleString()}</text>`;
+  const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p.price).toFixed(1)}`).join(' ');
+  const last = series[series.length - 1], lx = x(series.length - 1), ly = y(last.price);
+  return `<svg viewBox="0 0 ${W} ${H}" >
+    <defs><linearGradient id="gf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
+    ${g}
+    <polygon points="${L},${H - B} ${pts} ${lx},${H - B}" fill="url(#gf)"/>
+    <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="${f * .3}" stroke-linejoin="round" stroke-linecap="round"/>
+    ${series.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.price)}" r="${i === series.length - 1 ? f * .65 : f * .3}" fill="${i === series.length - 1 ? c : '#fff'}" stroke="${c}" stroke-width="${f * .2}"/>`).join('')}
+    <text x="${lx - f}" y="${ly - f * 1.1}" text-anchor="end" font-size="${f * 1.5}" fill="${c}" stroke="#fff" stroke-width="${f * .4}" paint-order="stroke">${last.price.toLocaleString()}원</text>
+  </svg>`;
+}
+
+function stockSlide(i) {
+  const s = D.stocks[i];
+  const mate = D.stocks[i % 2 === 0 ? i + 1 : i - 1];
+  const m = (s.intro.match(/\[(.+?)\]/) || [, ''])[1];
+  const intro = s.intro.replace(/\[.+?\]\s*/, '').replace(/\s*↔.*$/, '');
+  const prices = s.series.map(x => x.price);
+  const hi = Math.max(...prices), lo = Math.min(...prices);
+  let verdict = '';
+  if (mate && mate.ready) {
+    verdict = s.chg > mate.chg ? `🏆 지금은 <b>${esc(s.name)}</b>이(가) 앞서는 중`
+            : s.chg < mate.chg ? `지금은 <b>${esc(mate.name)}</b>이(가) 앞서는 중` : '지금은 무승부';
+  }
+  return `<main class="slide fade">
+    <section class="card sl-left">
+      <div class="sl-head">
+        <div><div class="sl-tag">${esc(m)} · ${s.market === '미국' ? '미국' : '국내'} · ${esc(s.code)}</div>
+             <div class="sl-name">${esc(s.name)}</div></div>
+        <div class="sl-price ${cls(s.chg)}">${s.price.toLocaleString()}<small>원</small>
+          <div class="sl-chg">${pctS(s.chg)} 출발 대비 · 어제보다 <span class="${cls(s.dayChg)}">${s.dayChg > 0 ? '+' : ''}${s.dayChg.toLocaleString()}</span></div></div>
+      </div>
+      <div class="sl-chart">${chartSVG(s.series, s.chg >= 0)}</div>
+    </section>
+    <aside class="side" style="grid-template-rows:auto auto auto 1fr">
+      <div class="card"><h3>📌 어떤 회사?</h3><div class="intro">${esc(intro)}</div></div>
+      <div class="card"><h3>📈 명지가 기록</h3>
+        <div class="kv"><div><span>출발가 · ${md(D.baseDay)}</span><b>${D.base.toLocaleString()}</b></div>
+          <div><span>지금</span><b class="${cls(s.chg)}">${s.price.toLocaleString()}</b></div>
+          <div><span>최고</span><b class="up">${hi.toLocaleString()}</b></div>
+          <div><span>최저</span><b class="dn">${lo.toLocaleString()}</b></div></div></div>
+      <div class="card"><h3>🌐 실제 주식시장에서는</h3>
+        <div class="real">${md(D.baseDay)} <b>${fmtReal(s.realBase, s.currency)}</b> → 지금 <b>${fmtReal(s.realNow, s.currency)}</b>
+          <span class="${cls(s.realChg)}">${pctS(s.realChg)}</span><br>
+          <span style="color:var(--sub);font-size:1rem">명지가는 실제 등락의 2배로 움직여요 · ${s.holders}명이 ${s.shares}주 보유 중</span></div></div>
+      ${mate ? `<div class="card"><h3>⚔️ 대결 상대</h3>
+        <div class="rival"><span><em class="mk ${mate.market === '미국' ? 'us' : 'kr'}">${mate.market === '미국' ? '미국' : '국내'}</em> ${esc(mate.name)}</span>
+          <span class="rp ${cls(mate.chg)}">${mate.ready ? mate.price.toLocaleString() + '원 ' + pctS(mate.chg) : '대기'}</span></div>
+        ${verdict ? `<div class="verdict">${verdict}</div>` : ''}</div>` : ''}
+    </aside>
+  </main>`;
+}
+
+function rotateTip() {
+  tipIdx = (tipIdx + 1) % TIPS.length;
+  const el = $('tip'); if (!el) return;
+  el.style.opacity = 0;
+  setTimeout(() => { el.textContent = TIPS[tipIdx]; el.style.opacity = 1; }, 600);
+}
+
+window.addEventListener('resize', () => { if (D) { render(); fitChart(); } });
+load();
+setInterval(load, 5 * 60 * 1000);      // 5분마다 새 숫자
+setInterval(rotateTip, 12 * 1000);     // 12초마다 경제 한 줄
+</script>
+</body>
+</html>
