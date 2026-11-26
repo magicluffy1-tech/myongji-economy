@@ -148,9 +148,10 @@ const TIPS = [
   '🥤 코카콜라처럼 불황에도 잘 팔리는 회사의 주식을 "방어주"라고 불러요.',
   '📰 투자 이유를 적는 습관! "왜 샀는지" 기록하면 다음 판단이 더 똑똑해져요.',
   '⚖️ 지난주 은행에 돈이 많이 들어오면 이번 주 금리가 내려가고, 적게 들어오면 올라가요.',
-  '📅 이자는 맡긴 날수만큼! 월요일에 맡겨야 일주일치 이자를 다 받아요.',
+  '📅 이자는 매일 잔액에 붙어요! 더 오래, 더 많이 맡길수록 이자가 커져요.',
+  '🪙 주식을 사고팔 때 생기는 1,000원 미만 잔돈은 자동으로 명지통장에 들어가요.',
   '🌹 모든 돈은 12월 30~31일 피어날 명지花 축제에서 쓸 수 있어요. 끝까지 지켜보세요!',
-  '🧮 이자는 원금 × 금리! 1만 원을 5%로 1주 맡기면 10,500원이 돼요.',
+  '🧮 이자 = 매일(잔액 × 금리 ÷ 7)의 합! 1만 원을 5%로 일주일 두면 10,500원이 돼요.',
   '🚗 미국 관세 뉴스는 수출이 많은 현대차 주가에 영향을 줘요.'
 ];
 let tipIdx = 0, D = null, cur = -1, slideTimer = null;
@@ -271,9 +272,9 @@ function render() {
       ${pairs}
     </section>
     <aside class="side">
-      <div class="card"><h3>🏦 명지은행 이번 주 금리 (월요일 → 다음 월요일)</h3>
+      <div class="card"><h3>🏦 명지통장 이번 주 금리 (7일 기준)</h3>
         <div class="rate"><div class="big">${(D.rate * 100).toFixed(0)}<small>%</small></div>
-          <div><p>${esc(D.rateReason)}</p><p class="ex">월요일에 1만 원 → 다음 월요일 <b class="up">${won(10000 + Math.floor(10000 * D.rate / 100 + 1e-9) * 100)}원</b><br>다른 요일은 맡긴 날수만큼만 (목요일이면 4일치)${D.inflow !== null ? ` · 지난주 은행 유입 ${Math.round(D.inflow * 100)}%` : ''}</p></div></div>
+          <div><p>${esc(D.rateReason)}</p><p class="ex">1만 원을 일주일 두면 → <b class="up">${won(Math.floor(10000 * (1 + D.rate)))}원</b><br>매일 잔액에 이자가 쌓여 월요일에 통장으로${D.inflow !== null ? ` · 지난주 은행 유입 ${Math.round(D.inflow * 100)}%` : ''}</p></div></div>
       </div>
       <div class="card flow"><h3>💰 명지 시장의 돈</h3>
         <div class="tot">${won(tot)}<small> 원 (처음 발행 ${won(m.issued)}원${m.extra ? ` · 창구에서 <span class="${cls(m.extra)}">${m.extra > 0 ? '+' : ''}${won(m.extra)}</span>` : ''})</small></div>
