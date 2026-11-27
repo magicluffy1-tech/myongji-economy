@@ -48,7 +48,7 @@
   .crown{position:absolute;top:.35rem;right:.6rem;font-size:.85rem;background:var(--red);color:#fff;border-radius:99rem;padding:.05rem .55rem}
   .crown.dnc{background:var(--blue)}
   /* 오른쪽 */
-  .side{display:grid;grid-template-rows:auto auto 1fr auto;gap:.8rem;min-height:0}
+  .side{display:grid;grid-template-rows:auto 1fr auto;gap:.8rem;min-height:0}
   .side .card{padding:.8rem 1.1rem}
   .card{background:var(--card);border:.08rem solid var(--line);border-radius:.9rem;padding:1rem 1.2rem}
   .card h3{font-size:1.2rem;color:var(--sub);font-weight:normal;margin-bottom:.4rem}
@@ -73,6 +73,9 @@
   .meter{height:.5rem;background:#ece6de;border-radius:99rem;margin-top:.35rem;overflow:hidden}
   .meter div{height:100%;background:var(--red);border-radius:99rem;transition:width .8s}
   .pop{font-size:1.05rem;line-height:1.6;margin-top:.5rem}
+  .join{display:flex;flex-direction:column;justify-content:space-evenly}
+  .join .stat{padding:1rem 1.1rem}.join .stat .v{font-size:2.8rem}.join .meter{height:.7rem}
+  .join .pop{font-size:1.3rem;line-height:1.75}
   .pop b{color:var(--red)}
   .fest{background:linear-gradient(135deg,#fff5f6,#fff);border-color:#f3c6cc}
   /* 오늘의 명지 시장 */
@@ -309,10 +312,9 @@ function render() {
   }
 
   const sorted = stocks.filter(s => s.ready).slice().sort((x, y) => y.chg - x.chg);
-  const best = sorted[0], worst = sorted[sorted.length - 1];
+  const spread = sorted.length > 1 && sorted[0].chg !== sorted[sorted.length - 1].chg;
+  const best = spread ? sorted[0] : null, worst = spread ? sorted[sorted.length - 1] : null;
   const popular = stocks.slice().sort((x, y) => y.holders - x.holders).filter(s => s.holders > 0).slice(0, 3);
-  const m = D.money, tot = m.total || 0;
-  const seg = (v, c, label) => tot > 0 && v > 0 ? `<div class="${c}" style="flex:${v}">${v / tot >= .12 ? label + ' ' + Math.round(v / tot * 100) + '%' : ''}</div>` : '';
   const N = D.students || 39;
 
   $('app').innerHTML = `
@@ -335,18 +337,13 @@ function render() {
         <div class="rate"><div class="big">${(D.rate * 100).toFixed(0)}<small>%</small></div>
           <div><p>${esc(D.rateReason)}</p><p class="ex">1만 원을 일주일 두면 → <b class="up">${won(Math.floor(10000 * (1 + D.rate)))}원</b><br>매일 잔액에 이자가 쌓여 월요일에 통장으로${D.inflow !== null ? ` · 지난주 은행 유입 ${Math.round(D.inflow * 100)}%` : ''}</p></div></div>
       </div>
-      <div class="card flow"><h3>💰 명지 시장의 돈</h3>
-        <div class="tot">${won(tot)}<small> 원 (처음 발행 ${won(m.issued)}원${m.extra ? ` · 창구에서 <span class="${cls(m.extra)}">${m.extra > 0 ? '+' : ''}${won(m.extra)}</span>` : ''})</small></div>
-        <div class="bar">${seg(m.bank, 'b1', '은행')}${seg(m.stock, 'b2', '주식')}${seg(Math.max(0, m.cash), 'b3', '지갑')}</div>
-        <div class="legend"><span><i class="b1"></i>은행 ${won(m.bank)}</span><span><i class="b2"></i>주식 ${won(m.stock)}</span><span><i class="b3"></i>지갑 ${won(Math.max(0, m.cash))}</span></div>
-      </div>
-      <div class="card"><h3>🙋 우리 학교 참여</h3>
+      <div class="card join"><h3>🙋 우리 학교 참여</h3>
         <div class="stats">
           <div class="stat"><div class="k">예금한 학생</div><div class="v">${D.savers}<small> / ${N}명</small></div><div class="meter"><div style="width:${D.savers / N * 100}%"></div></div></div>
           <div class="stat"><div class="k">주식 가진 학생</div><div class="v">${D.investors}<small> / ${N}명</small></div><div class="meter"><div style="width:${D.investors / N * 100}%"></div></div></div>
         </div>
         <div class="pop">
-          ${best ? `🏆 지금 1등 종목 <b>${esc(best.name)}</b> <span class="${cls(best.chg)}">${pctS(best.chg)}</span>` : '🏆 1등 종목은 첫 거래일부터 공개돼요'}<br>
+          ${best ? `🏆 지금 1등 종목 <b>${esc(best.name)}</b> <span class="${cls(best.chg)}">${pctS(best.chg)}</span>` : '🏆 1등 종목은 가격이 움직이기 시작하면 공개돼요'}<br>
           ${worst && worst !== best ? `🧊 가장 힘든 종목 ${esc(worst.name)} <span class="${cls(worst.chg)}">${pctS(worst.chg)}</span><br>` : ''}
           ${popular.length ? `❤️ 인기 종목 ${popular.map(s => `${esc(s.name)} ${s.holders}명`).join(' · ')}` : '❤️ 인기 종목은 첫 거래 뒤에 보여요'}
         </div>
