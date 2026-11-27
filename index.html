@@ -75,6 +75,22 @@
   .pop{font-size:1.05rem;line-height:1.6;margin-top:.5rem}
   .pop b{color:var(--red)}
   .fest{background:linear-gradient(135deg,#fff5f6,#fff);border-color:#f3c6cc}
+  /* 오늘의 명지 시장 */
+  .mkt h3{display:flex;justify-content:space-between;align-items:center}
+  .mkt .st{font-size:1rem;border-radius:99rem;padding:.15rem .7rem;background:#f0ebe4;color:var(--sub)}
+  .mkt .st.trading{background:var(--red);color:#fff}
+  .mkt .st.open{background:#fff0f2;color:var(--red)}
+  .tl{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:.45rem;margin:.2rem 0 .45rem}
+  .step{border:.08rem solid var(--line);border-radius:.6rem;padding:.45rem .55rem;background:var(--bg);color:var(--sub);line-height:1.25}
+  .step b{display:block;font-size:1.2rem;color:var(--ink);white-space:nowrap}
+  .step span{font-size:1.05rem}
+  .step small{display:block;font-size:.85rem}
+  .step.done{opacity:.55}
+  .step.on{background:#fff;border-color:var(--red);box-shadow:0 0 0 .1rem var(--red) inset}
+  .step.on b,.step.on span{color:var(--red)}
+  .mkt .cd{font-size:1.15rem}
+  .mkt .cd b{color:var(--red)}
+  .mkt .fl{font-size:.9rem;color:var(--sub);margin-top:.25rem}
   .fest .row{display:flex;justify-content:space-between;align-items:baseline}
   .fest .d{font-family:'Gowun Batang';font-size:1.9rem;color:var(--red)}
   .fest p{font-size:.95rem;color:var(--sub);line-height:1.4;margin-top:.2rem}
@@ -141,6 +157,9 @@ const TIPS = [
   '💱 달러가 비싸지면(원화 약세) 수출 기업은 웃고, 수입하는 기업은 부담이 커져요.',
   '🏦 예금은 원금이 안전한 대신 이자가 정해져 있고, 주식은 더 벌 수도 잃을 수도 있어요.',
   '🌙 미국 주식은 우리가 잠든 밤에 거래돼요. 아침 뉴스로 밤사이 소식을 확인해 보세요.',
+  '🕐 명지은행·명지증권 창구는 평일 매일 13:00~13:15, 딱 15분만 열려요.',
+  '⏰ 매일 아침 08:30 장이 열리면 그날의 명지가가 정해져요. 오전에 뉴스를 보고 13:00에 결정해요!',
+  '💼 매주 은행원·증권사 직원을 뽑아요. 일주일 일하면 직원 급여 5,000원!',
   '🧺 10종목을 모두 조금씩 가지면, 오르는 종목과 내리는 종목이 서로 메워 줘서 원금이 잘 지켜져요.',
   '🤝 엔비디아가 오르면 삼성전자도 오르는 일이 많아요. 같이 움직이는 종목만 사면 분산이 안 돼요.',
   '🔄 인버스는 "거꾸로" 상품! 시장이 떨어질 때 오르니까, 위험을 줄이는 방패가 돼요.',
@@ -160,7 +179,7 @@ const MAIN_MS = 60 * 1000, STOCK_MS = 8 * 1000;   // 메인 60초, 종목별 8�
 
 /* ---------- 새 숫자를 받아 오는 주기 ----------
    창구 시간(설정 탭 B28~B29, 앞 5분·뒤 10분 여유): 15초마다
-   아침 6시~9시(밤사이 주가 반영): 5분마다
+   장 시작(08:30) 앞뒤: 1분마다 · 아침 6시~9시: 5분마다
    그 밖의 시간: 10분마다 */
 let loadTimer = null;
 function minutesOf(t) { const p = String(t || '').split(':').map(Number); return p[0] * 60 + (p[1] || 0); }
@@ -168,12 +187,14 @@ function windowState() {
   const w = (D && D.window) || { open: '13:00', close: '13:15' };
   const d = new Date(), n = d.getHours() * 60 + d.getMinutes();
   const o = minutesOf(w.open), c = minutesOf(w.close);
-  return { open: w.open, close: w.close, openNow: n >= o && n < c, busy: n >= o - 5 && n < c + 10, morning: n >= 360 && n < 540 };
+  const mo = minutesOf(w.market || '08:30');
+  return { open: w.open, close: w.close, openNow: n >= o && n < c, busy: n >= o - 5 && n < c + 10,
+           marketOpen: n >= mo - 2 && n < mo + 10, morning: n >= 360 && n < 540 };
 }
 function scheduleLoad() {
   clearTimeout(loadTimer);
   const st = windowState();
-  const ms = st.busy ? 15 * 1000 : st.morning ? 5 * 60 * 1000 : 10 * 60 * 1000;
+  const ms = st.busy ? 15 * 1000 : st.marketOpen ? 60 * 1000 : st.morning ? 5 * 60 * 1000 : 10 * 60 * 1000;
   loadTimer = setTimeout(load, ms);
 }
 
@@ -208,6 +229,44 @@ function load() {
     });
 }
 
+/* ---------- 오늘의 명지 시장 (서버가 알려 준 시간표 + TV 시계) ---------- */
+const PH_IDX = { open: 0, trading: 1, after: 2, closed: 3 };
+function mkt() {
+  const m = Object.assign({ phase: 'before', marketTime: '08:30', open: '13:00', close: '13:15', end: '16:30' }, D.market || {});
+  const d = new Date(), n = d.getHours() * 60 + d.getMinutes();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  if (D.today === today && m.openDay && ['pre', 'open', 'trading', 'after', 'closed'].indexOf(m.phase) >= 0)
+    m.phase = n < minutesOf(m.marketTime) ? 'pre' : n < minutesOf(m.open) ? 'open' : n < minutesOf(m.close) ? 'trading'
+            : n < minutesOf(m.end) ? 'after' : 'closed';
+  m.n = n;
+  return m;
+}
+function dur(min) { const h = Math.floor(min / 60), mm = min % 60; return (h ? h + '시간 ' : '') + (mm || !h ? mm + '분' : ''); }
+function mktCard() {
+  const m = mkt(), i = PH_IDX[m.phase], nx = m.next ? md(m.next) : '';
+  const st = k => i === undefined ? '' : (k < i ? 'done' : k === i ? 'on' : '');
+  const tag = { trading: '🔴 거래 중', open: '장 열림', pre: '장 시작 전', after: '거래 끝', closed: '장 마감', holiday: '휴장', before: '시작 전', ended: '기간 종료' }[m.phase];
+  const cd = {
+    pre: `오늘 시세 발표까지 <b>${dur(minutesOf(m.marketTime) - m.n)}</b>`,
+    open: `거래 시작까지 <b>${dur(minutesOf(m.open) - m.n)}</b> · 뉴스 보고 미리 결정해요`,
+    trading: `거래 마감까지 <b>${dur(Math.max(1, minutesOf(m.close) - m.n))}</b> · 지금 창구로!`,
+    after: `오늘 거래는 끝났어요 · 장 마감까지 <b>${dur(minutesOf(m.end) - m.n)}</b>`,
+    closed: `오늘 장 마감 · 다음 장 <b>${nx} ${m.marketTime}</b>`,
+    holiday: `오늘은 쉬는 날 · 다음 장 <b>${nx} ${m.marketTime}</b>`,
+    before: `<b>${md(m.next || D.baseDay)} ${m.marketTime}</b> 첫 장이 열려요`,
+    ended: `거래 기간이 끝났어요 · 축제에서 만나요!`
+  }[m.phase] || '';
+  return `<div class="card mkt"><h3>⏰ 오늘의 명지 시장 <span class="st ${m.phase}">${tag}</span></h3>
+    <div class="tl">
+      <div class="step ${st(0)}"><b>${m.marketTime}</b><span>장 시작</span><small>오늘 시세 확정</small></div>
+      <div class="step ${st(1)}"><b>${m.open}~${m.close}</b><span>거래</span><small>은행·증권 창구</small></div>
+      <div class="step ${st(2)}"><b>${m.end}</b><span>장 마감</span><small>하교 · 다음 장 ${m.marketTime}</small></div>
+    </div>
+    <div class="cd">${cd}</div>
+    <div class="fl">🌹 12.29(화) 마지막 정산 → 12.30~31 축제에서 사용</div>
+  </div>`;
+}
+
 function spark(arr, up) {
   if (!arr || arr.length < 2) return '';
   const mn = Math.min(...arr), mx = Math.max(...arr), rg = (mx - mn) || 1;
@@ -226,7 +285,7 @@ function stkCard(s, win) {
     <div class="px ${cls(s.chg)}">${won(r ? s.price : D.base)}<small>원</small></div>
     <div class="ch">
       <div class="tot ${cls(s.chg)}">${r ? pctS(s.chg) : '출발 대기'}</div>
-      <div class="day">${r ? `어제보다 <span class="${cls(s.dayChg)}">${s.dayChg > 0 ? '+' : ''}${won(s.dayChg)}</span>` : md(D.baseDay) + ' 종가로 시작'}</div>
+      <div class="day">${r ? `어제보다 <span class="${cls(s.dayChg)}">${s.dayChg > 0 ? '+' : ''}${won(s.dayChg)}</span>` : md(D.baseDay) + ' ' + mkt().marketTime + ' 출발'}</div>
     </div>
   </div>`;
 }
@@ -261,14 +320,14 @@ function render() {
     <div class="logo">🌹 명지 <b>경제 뉴스</b><small>명지은행 · 명지증권</small></div>
     <span class="chip">${md(t)}</span>
     <span class="grow"></span>
-    ${windowState().openNow ? `<span class="chip hot">🔴 <b>지금 창구 운영 중</b> · ${windowState().close}까지 실시간</span>` : ''}
-    ${nx ? `<span class="chip ${toN === 0 ? 'hot' : ''}">${toN === 0 ? '<b>오늘 점심 거래일!</b>' : `다음 거래일 <b>${md(nx.date)}</b> · D-${toN}`}</span>` : '<span class="chip">거래 기간 종료</span>'}
+    ${mkt().phase === 'trading' ? `<span class="chip hot">🔴 <b>지금 거래 중</b> · ${mkt().close}까지</span>`
+      : `<span class="chip">${mkt().phase === 'open' ? '장 열림 · 거래 <b>' + mkt().open + '</b>' : mkt().phase === 'pre' ? '장 시작 <b>' + mkt().marketTime + '</b>' : mkt().phase === 'after' ? '거래 끝 · 장 마감 <b>' + mkt().end + '</b>' : mkt().phase === 'ended' ? '거래 기간 종료' : '다음 장 <b>' + (mkt().next ? md(mkt().next) : '-') + ' ' + mkt().marketTime + '</b>'}</span>`}
     <span class="chip hot">피어날 명지花 축제 <b>${toF > 0 ? 'D-' + toF : toF === 0 ? 'D-DAY' : '🌹'}</b></span>
   </header>
   ${cur < 0 ? `<main class="${ANIM ? 'fade' : ''}">
     <section class="board">
       <div class="bhead">
-        <span>${md(D.baseDay)} ${won(D.base)}원 출발 · 실제 주가 등락의 2배 · % 는 출발 대비</span></div>
+        <span>${md(D.baseDay)} ${won(D.base)}원 출발 · 실제 주가 등락의 2배 · % 는 출발 대비 · ${D.priceDate ? '<b>' + md(D.priceDate) + ' ' + mkt().marketTime + ' 확정 시세</b>' : '첫 시세는 ' + md(D.baseDay) + ' ' + mkt().marketTime}</span></div>
       ${pairs}
     </section>
     <aside class="side">
@@ -292,10 +351,7 @@ function render() {
           ${popular.length ? `❤️ 인기 종목 ${popular.map(s => `${esc(s.name)} ${s.holders}명`).join(' · ')}` : '❤️ 인기 종목은 첫 거래 뒤에 보여요'}
         </div>
       </div>
-      <div class="card fest">
-        <div class="row"><h3>🌹 축제에서 쓰는 날</h3><div class="d">12.30~31</div></div>
-        <p>12.29(화) 마지막 정산 때 은행·주식의 돈을 모두 지폐로 찾아 축제 부스에서 써요.</p>
-      </div>
+      ${mktCard()}
     </aside>
   </main>` : stockSlide(cur)}
   <footer><span class="tag">경제 한 줄</span><span id="tip">${TIPS[tipIdx]}</span><span class="dots">${dotsHTML()}</span><span class="upd">${D.updated} 갱신</span></footer>`;
@@ -354,7 +410,7 @@ function fit() {
 function fmtReal(v, cur) { return cur === '달러' ? '$' + v.toFixed(2) : Math.round(v).toLocaleString('ko-KR') + '원'; }
 
 function chartSVG(series, up, W0, H0) {
-  if (!series || series.length < 2) return `<div class="sl-empty">${md(D.baseDay)} 종가가 나오면 그래프가 그려져요</div>`;
+  if (!series || series.length < 2) return `<div class="sl-empty">시세가 이틀 이상 쌓이면 그래프가 그려져요</div>`;
   const W = Math.round(W0 || 1000), H = Math.round(H0 || 430), f = Math.max(12, W / 70), L = f * 4.8, R = f * 1.5, T = f * 2.2, B = f * 3;
   const vals = series.map(x => x.price).concat([D.base]);
   let mn = Math.min(...vals), mx = Math.max(...vals);
@@ -418,7 +474,7 @@ function stockSlide(i) {
           <div><span>최고</span><b class="up">${hi.toLocaleString()}</b></div>
           <div><span>최저</span><b class="dn">${lo.toLocaleString()}</b></div></div></div>
       <div class="card"><h3>🌐 실제 주식시장에서는</h3>
-        <div class="real">${md(D.baseDay)} <b>${fmtReal(s.realBase, s.currency)}</b> → 지금 <b>${fmtReal(s.realNow, s.currency)}</b>
+        <div class="real">출발 기준 <b>${fmtReal(s.realBase, s.currency)}</b> → 최근 종가 <b>${fmtReal(s.realNow, s.currency)}</b>
           <span class="${cls(s.realChg)}">${pctS(s.realChg)}</span><br>
           <span style="color:var(--sub);font-size:1rem">명지가는 실제 등락의 2배로 움직여요 · ${s.holders}명이 ${s.shares}주 보유 중</span></div></div>
       ${mate ? `<div class="card"><h3>⚖️ 시소 짝</h3>
@@ -442,6 +498,15 @@ fit();
 load();
 // 새 숫자 받아 오기는 scheduleLoad()가 시간대에 맞춰 예약해요
 setInterval(rotateTip, 12 * 1000);     // 12초마다 경제 한 줄
+// 1분마다 시장 시계(남은 시간·장 상태)만 다시 그리기
+let lastPhase = '';
+setInterval(() => {
+  if (!D) return;
+  const p = mkt().phase;
+  if (p !== lastPhase && lastPhase) { lastPhase = p; load(); return; }   // 08:30·13:00·13:15에 바로 새 숫자
+  lastPhase = p;
+  if (cur < 0) { render(); fit(); }
+}, 60 * 1000);
 </script>
 </body>
 </html>
